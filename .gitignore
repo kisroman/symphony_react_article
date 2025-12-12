@@ -1,0 +1,11 @@
+/node_modules
+/vendor
+/.idea
+/.vscode
+.env.local
+.env.*.local
+var/
+public/build/
+frontend/node_modules
+backend/var/
+backend/vendor/
