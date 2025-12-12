@@ -34,6 +34,9 @@ class User
     #[ORM\OneToMany(targetEntity: Article::class, mappedBy: 'author', orphanRemoval: true)]
     private Collection $articles;
 
+    #[ORM\Column(length: 255)]
+    private ?string $role = null;
+
     public function __construct()
     {
         $this->articles = new ArrayCollection();
@@ -118,6 +121,18 @@ class User
                 $article->setAuthor(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getRole(): ?string
+    {
+        return $this->role;
+    }
+
+    public function setRole(string $role): static
+    {
+        $this->role = $role;
 
         return $this;
     }
