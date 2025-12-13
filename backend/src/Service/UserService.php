@@ -27,16 +27,15 @@ class UserService
      * @param string $firstName
      * @param string $lastName
      * @param string $role
-     * @param string $password
      *
      * @return User
+     * @throws \Random\RandomException
      */
     public function createAndFlush(
         string $username,
         string $firstName,
         string $lastName,
-        string $role,
-        string $password
+        string $role
     ): User {
         if (!\in_array($role, [self::ROLE_BLOGGER, self::ROLE_ADMIN], true)) {
             throw new InvalidArgumentException(sprintf('Unsupported role "%s"', $role));
@@ -47,7 +46,7 @@ class UserService
             ->setFirstName($firstName)
             ->setLastName($lastName)
             ->setRole($role)
-            ->setPassword($password);
+            ->setPassword(bin2hex(random_bytes(16)));
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();

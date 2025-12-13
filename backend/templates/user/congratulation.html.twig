@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}User created{% endblock %}
+
+{% block body %}
+    <h1>User created successfully</h1>
+    <p>User ID: {{ userId }}</p>
+    <a href="{{ path('user_create') }}">Create another user</a>
+{% endblock %}

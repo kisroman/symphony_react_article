@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Controller;
+
+use App\Entity\User;
+use App\Form\UserType;
+use App\Service\UserService;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+final class UserController extends AbstractController
+{
+    /**
+     * @param Request $request
+     * @param UserService $userService
+     *
+     * @return Response
+     * @throws \Random\RandomException
+     */
+    #[Route('/user/create', name: 'user_create', methods: ['GET', 'POST'])]
+    public function create(Request $request, UserService $userService): Response
+    {
+        $userData = new User();
+        $form = $this->createForm(UserType::class, $userData);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $user = $userService->createAndFlush(
+                $userData->getUsername(),
+                $userData->getFirstName(),
+                $userData->getLastName(),
+                UserService::ROLE_BLOGGER
+            );
+
+            return $this->redirectToRoute('user_create_congratulation', [
+                'id' => $user->getId(),
+            ]);
+        }
+
+        return $this->render('user/create.html.twig', [
+            'form' => $form->createView(),
+        ]);
+    }
+
+    /**
+     * @param int $id
+     *
+     * @return Response
+     */
+    #[Route('/user/create/congratulation/{id}', name: 'user_create_congratulation', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function congratulation(int $id): Response
+    {
+        return $this->render('user/congratulation.html.twig', [
+            'userId' => $id,
+        ]);
+    }
+}
