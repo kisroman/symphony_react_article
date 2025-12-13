@@ -29,7 +29,7 @@ final class UserController extends AbstractController
     #[Route('/user/create', name: 'user_create', methods: ['GET', 'POST'])]
     public function create(Request $request, UserService $userService): Response
     {
-        echo $this->userApiKey;
+        //echo $this->userApiKey;
 
         $userData = new User();
         $form = $this->createForm(UserType::class, $userData);
@@ -47,6 +47,11 @@ final class UserController extends AbstractController
                 'id' => $user->getId(),
             ]);
         }
+
+        if ($form->isSubmitted() && !$form->isValid()) {
+            $this->addFlash('error', 'Please fix the validation errors.');
+        }
+
 
         return $this->render('user/create.html.twig', [
             'form' => $form->createView(),

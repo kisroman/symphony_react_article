@@ -37,6 +37,11 @@ final class ArticleController extends AbstractController
             ]);
         }
 
+        if ($form->isSubmitted() && !$form->isValid()) {
+            $this->addFlash('error', 'Please fix the validation errors.');
+        }
+
+
         return $this->render('article/create.html.twig', [
             'form' => $form->createView(),
         ]);
