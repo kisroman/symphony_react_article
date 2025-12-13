@@ -32,7 +32,8 @@ class CreateAdminUserCommand extends Command
         $this
             ->addArgument('username', InputArgument::REQUIRED, 'Username')
             ->addArgument('firstName', InputArgument::REQUIRED, 'FirstName')
-            ->addArgument('lastName', InputArgument::REQUIRED, 'LastName');
+            ->addArgument('lastName', InputArgument::REQUIRED, 'LastName')
+            ->addArgument('password', InputArgument::REQUIRED, 'Password');
         ;
     }
 
@@ -50,8 +51,9 @@ class CreateAdminUserCommand extends Command
         $username = $input->getArgument('username');
         $firstName = $input->getArgument('firstName');
         $lastName = $input->getArgument('lastName');
+        $password = $input->getArgument('password');
 
-        $user = $this->userService->createAndFlush($username, $firstName, $lastName, UserService::ROLE_ADMIN);
+        $user = $this->userService->createAndFlush($username, $firstName, $lastName, UserService::ROLE_ADMIN, $password);
 
         $io->success('Admin user successfully created. User ID: ' . $user->getId());
 

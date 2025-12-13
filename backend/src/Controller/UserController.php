@@ -40,7 +40,8 @@ final class UserController extends AbstractController
                 $userData->getUsername(),
                 $userData->getFirstName(),
                 $userData->getLastName(),
-                UserService::ROLE_BLOGGER
+                UserService::ROLE_BLOGGER,
+                $userData->getPassword()
             );
 
             return $this->redirectToRoute('user_create_congratulation', [

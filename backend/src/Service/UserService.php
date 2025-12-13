@@ -6,6 +6,7 @@ use App\Entity\User;
 use App\Factory\UserFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use InvalidArgumentException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class UserService
 {
@@ -15,10 +16,12 @@ class UserService
     /**
      * @param EntityManagerInterface $entityManager
      * @param UserFactory $userFactory
+     * @param UserPasswordHasherInterface $userPasswordHasher
      */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly UserFactory $userFactory,
+        private readonly UserPasswordHasherInterface $userPasswordHasher,
     ) {
     }
 
@@ -35,7 +38,8 @@ class UserService
         string $username,
         string $firstName,
         string $lastName,
-        string $role
+        string $role,
+        string $plainPassword
     ): User {
         if (!\in_array($role, [self::ROLE_BLOGGER, self::ROLE_ADMIN], true)) {
             throw new InvalidArgumentException(sprintf('Unsupported role "%s"', $role));
@@ -46,7 +50,7 @@ class UserService
             ->setFirstName($firstName)
             ->setLastName($lastName)
             ->setRole($role)
-            ->setPassword(bin2hex(random_bytes(16)));
+            ->setPassword($this->userPasswordHasher->hashPassword($user, $plainPassword));
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
