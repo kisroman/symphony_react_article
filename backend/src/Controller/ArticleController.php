@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Article;
+use App\Exception\ValidationException;
 use App\Form\ArticleType;
 use App\Security\Voter\ArticleCreateVoter;
 use App\Service\ArticleService;
@@ -41,7 +42,7 @@ final class ArticleController extends AbstractController
         }
 
         if ($form->isSubmitted() && !$form->isValid()) {
-            $this->addFlash('error', 'Please fix the validation errors.');
+            throw new ValidationException('Validation failed');
         }
 
 

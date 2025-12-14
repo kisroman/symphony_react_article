@@ -9,30 +9,36 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
+    #[Groups(['user:read', 'article:read'])]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Groups(['user:read', 'user:write', 'article:read'])]
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
     private ?string $username = null;
 
+    #[Groups(['user:read', 'user:write', 'article:read'])]
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     private ?string $firstName = null;
 
+    #[Groups(['user:read', 'user:write', 'article:read'])]
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     private ?string $lastName = null;
 
+    #[Groups(['user:write'])]
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     private ?string $password = null;
@@ -40,9 +46,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var Collection<int, Article>
      */
+    #[Groups(['user:read'])]
     #[ORM\OneToMany(targetEntity: Article::class, mappedBy: 'author', orphanRemoval: true)]
     private Collection $articles;
 
+    #[Groups(['user:read', 'user:write'])]
     #[ORM\Column(length: 255)]
     #[Assert\Choice(choices: [UserService::ROLE_BLOGGER, UserService::ROLE_ADMIN])]
     private ?string $role = null;
