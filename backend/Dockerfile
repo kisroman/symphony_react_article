@@ -20,7 +20,7 @@ RUN apt-get update \
         zip \
     && rm -rf /var/lib/apt/lists/*
 
-6RUN pecl install xdebug \
+RUN pecl install xdebug \
     && docker-php-ext-enable xdebug
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
