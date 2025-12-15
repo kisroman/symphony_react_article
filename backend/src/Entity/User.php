@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Entity;
 
 use App\Repository\UserRepository;
@@ -35,9 +37,6 @@ class User
     #[Assert\NotBlank]
     private ?string $password = null;
 
-    /**
-     * @var Collection<int, Article>
-     */
     #[ORM\OneToMany(targetEntity: Article::class, mappedBy: 'author', orphanRemoval: true)]
     private Collection $articles;
 
@@ -103,9 +102,6 @@ class User
         return $this;
     }
 
-    /**
-     * @return Collection<int, Article>
-     */
     public function getArticles(): Collection
     {
         return $this->articles;

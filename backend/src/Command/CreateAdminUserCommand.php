@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Command;
 
@@ -32,8 +33,7 @@ class CreateAdminUserCommand extends Command
         $this
             ->addArgument('username', InputArgument::REQUIRED, 'Username')
             ->addArgument('firstName', InputArgument::REQUIRED, 'FirstName')
-            ->addArgument('lastName', InputArgument::REQUIRED, 'LastName');
-        ;
+            ->addArgument('lastName', InputArgument::REQUIRED, 'LastName');;
     }
 
     /**

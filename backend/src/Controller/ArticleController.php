@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\Article;
@@ -40,7 +42,6 @@ final class ArticleController extends AbstractController
         if ($form->isSubmitted() && !$form->isValid()) {
             $this->addFlash('error', 'Please fix the validation errors.');
         }
-
 
         return $this->render('article/create.html.twig', [
             'form' => $form->createView(),
