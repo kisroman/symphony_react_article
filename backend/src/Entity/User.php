@@ -55,6 +55,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Choice(choices: [UserService::ROLE_BLOGGER, UserService::ROLE_ADMIN])]
     private ?string $role = null;
 
+    #[ORM\Column(length: 255)]
+    private ?string $api_token = null;
+
     public function __construct()
     {
         $this->articles = new ArrayCollection();
@@ -168,5 +171,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
+    }
+
+    public function getApiToken(): ?string
+    {
+        return $this->api_token;
+    }
+
+    public function setApiToken(string $api_token): static
+    {
+        $this->api_token = $api_token;
+
+        return $this;
     }
 }

@@ -50,6 +50,7 @@ class UserService
             ->setFirstName($firstName)
             ->setLastName($lastName)
             ->setRole($role)
+            ->setApiToken(bin2hex(random_bytes(32)))
             ->setPassword($this->userPasswordHasher->hashPassword($user, $plainPassword));
 
         $this->entityManager->persist($user);
