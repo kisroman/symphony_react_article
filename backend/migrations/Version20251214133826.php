@@ -19,13 +19,11 @@ final class Version20251214133826 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        // this up() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE "user" ADD api_token VARCHAR(255)');
     }
 
     public function down(Schema $schema): void
     {
-        // this down() migration is auto-generated, please modify it to your needs
         $this->addSql('ALTER TABLE "user" DROP api_token');
     }
 }
