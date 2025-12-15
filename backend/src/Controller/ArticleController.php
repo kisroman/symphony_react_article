@@ -43,7 +43,6 @@ final class ArticleController extends AbstractController
             $this->addFlash('error', 'Please fix the validation errors.');
         }
 
-
         return $this->render('article/create.html.twig', [
             'form' => $form->createView(),
         ]);

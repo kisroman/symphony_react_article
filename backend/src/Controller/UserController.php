@@ -54,7 +54,6 @@ final class UserController extends AbstractController
             $this->addFlash('error', 'Please fix the validation errors.');
         }
 
-
         return $this->render('user/create.html.twig', [
             'form' => $form->createView(),
         ]);
