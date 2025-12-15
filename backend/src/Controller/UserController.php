@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use App\Entity\User;
@@ -53,7 +55,6 @@ final class UserController extends AbstractController
         if ($form->isSubmitted() && !$form->isValid()) {
             throw new ValidationException('Validation failed');
         }
-
 
         return $this->render('user/register.html.twig', [
             'form' => $form->createView(),
