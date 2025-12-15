@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Enum\UserRole;
 use App\Form\UserType;
 use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -37,25 +38,26 @@ final class UserController extends AbstractController
         $form = $this->createForm(UserType::class, $userData);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $user = $userService->createAndFlush(
-                $userData->getUsername(),
-                $userData->getFirstName(),
-                $userData->getLastName(),
-                UserService::ROLE_BLOGGER
-            );
-
-            return $this->redirectToRoute('user_create_congratulation', [
-                'id' => $user->getId(),
-            ]);
-        }
-
         if ($form->isSubmitted() && !$form->isValid()) {
             $this->addFlash('error', 'Please fix the validation errors.');
         }
 
-        return $this->render('user/create.html.twig', [
-            'form' => $form->createView(),
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            return $this->render('user/create.html.twig', [
+                'form' => $form->createView(),
+            ]);
+        }
+
+        $user = $userService->createAndFlush(
+            $userData->getUsername(),
+            $userData->getFirstName(),
+            $userData->getLastName(),
+            UserRole::BLOGGER,
+            $userData->getPassword() ?? ''
+        );
+
+        return $this->redirectToRoute('user_create_congratulation', [
+            'id' => $user->getId(),
         ]);
     }
 

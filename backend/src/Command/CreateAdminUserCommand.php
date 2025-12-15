@@ -1,8 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Command;
 
+use App\Enum\UserRole;
 use App\Service\UserService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -33,7 +35,8 @@ class CreateAdminUserCommand extends Command
         $this
             ->addArgument('username', InputArgument::REQUIRED, 'Username')
             ->addArgument('firstName', InputArgument::REQUIRED, 'FirstName')
-            ->addArgument('lastName', InputArgument::REQUIRED, 'LastName');;
+            ->addArgument('lastName', InputArgument::REQUIRED, 'LastName')
+            ->addArgument('password', InputArgument::REQUIRED, 'Plain password');
     }
 
     /**
@@ -41,7 +44,6 @@ class CreateAdminUserCommand extends Command
      * @param OutputInterface $output
      *
      * @return int
-     * @throws \Random\RandomException
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
@@ -50,8 +52,15 @@ class CreateAdminUserCommand extends Command
         $username = $input->getArgument('username');
         $firstName = $input->getArgument('firstName');
         $lastName = $input->getArgument('lastName');
+        $password = $input->getArgument('password');
 
-        $user = $this->userService->createAndFlush($username, $firstName, $lastName, UserService::ROLE_ADMIN);
+        $user = $this->userService->createAndFlush(
+            $username,
+            $firstName,
+            $lastName,
+            UserRole::ADMIN,
+            $password
+        );
 
         $io->success('Admin user successfully created. User ID: ' . $user->getId());
 
