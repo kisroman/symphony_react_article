@@ -30,24 +30,24 @@ final class ArticleController extends AbstractController
         $form = $this->createForm(ArticleType::class, $articleData);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $article = $articleService->createAndFlush(
-                $articleData->getTitle(),
-                $articleData->getDescription(),
-                $articleData->getAuthor()
-            );
-
-            return $this->redirectToRoute('article_create_congratulation', [
-                'id' => $article->getId(),
-            ]);
-        }
-
         if ($form->isSubmitted() && !$form->isValid()) {
             $this->addFlash('error', 'Please fix the validation errors.');
         }
 
-        return $this->render('article/create.html.twig', [
-            'form' => $form->createView(),
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            return $this->render('article/create.html.twig', [
+                'form' => $form->createView(),
+            ]);
+        }
+
+        $article = $articleService->createAndFlush(
+            $articleData->getTitle(),
+            $articleData->getDescription(),
+            $articleData->getAuthor()
+        );
+
+        return $this->redirectToRoute('article_create_congratulation', [
+            'id' => $article->getId(),
         ]);
     }
 
