@@ -32,8 +32,6 @@ final class UserController extends AbstractController
     #[Route('/user/create', name: 'user_create', methods: ['GET', 'POST'])]
     public function create(Request $request, UserService $userService): Response
     {
-        //echo $this->userApiKey;
-
         $userData = new User();
         $form = $this->createForm(UserType::class, $userData);
         $form->handleRequest($request);
