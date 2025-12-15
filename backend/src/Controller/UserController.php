@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Enum\UserRole;
 use App\Exception\ValidationException;
 use App\Form\UserType;
 use App\Service\UserService;
@@ -32,32 +33,30 @@ final class UserController extends AbstractController
     #[Route('/user/register', name: 'user_register', methods: ['GET', 'POST'])]
     public function create(Request $request, UserService $userService): Response
     {
-        //echo $this->userApiKey;
-
         $userData = new User();
         $form = $this->createForm(UserType::class, $userData);
         $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $user = $userService->createAndFlush(
-                $userData->getUsername(),
-                $userData->getFirstName(),
-                $userData->getLastName(),
-                UserService::ROLE_BLOGGER,
-                $userData->getPassword()
-            );
-
-            return $this->redirectToRoute('user_register_congratulation', [
-                'id' => $user->getId(),
-            ]);
-        }
 
         if ($form->isSubmitted() && !$form->isValid()) {
             throw new ValidationException('Validation failed');
         }
 
-        return $this->render('user/register.html.twig', [
-            'form' => $form->createView(),
+        if (!$form->isSubmitted() || !$form->isValid()) {
+            return $this->render('user/register.html.twig', [
+                'form' => $form->createView(),
+            ]);
+        }
+
+        $user = $userService->createAndFlush(
+            $userData->getUsername(),
+            $userData->getFirstName(),
+            $userData->getLastName(),
+            UserRole::BLOGGER,
+            $userData->getPassword() ?? ''
+        );
+
+        return $this->redirectToRoute('user_create_congratulation', [
+            'id' => $user->getId(),
         ]);
     }
 

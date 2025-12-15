@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\UserRole;
 use App\Repository\UserRepository;
-use App\Service\UserService;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -54,7 +54,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[Groups(['user:read', 'user:write'])]
     #[ORM\Column(length: 255)]
-    #[Assert\Choice(choices: [UserService::ROLE_BLOGGER, UserService::ROLE_ADMIN])]
+    #[Assert\Choice(callback: [UserRole::class, 'values'])]
     private ?string $role = null;
 
     #[ORM\Column(length: 255)]
@@ -158,9 +158,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getRoles(): array
     {
-        $role = $this->role ?? UserService::ROLE_BLOGGER;
+        $roles = ['ROLE_USER'];
 
-        return array_unique([$role]);
+        if ($this->role !== null) {
+            $roles[] = sprintf('ROLE_%s', strtoupper($this->role));
+        }
+
+        return array_unique($roles);
     }
 
     public function getUserIdentifier(): string
