@@ -7,15 +7,19 @@ namespace App\Service;
 use App\Entity\User;
 use App\Enum\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
+use InvalidArgumentException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class UserService
 {
 
     /**
      * @param EntityManagerInterface $entityManager
+     * @param UserPasswordHasherInterface $userPasswordHasher
      */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly UserPasswordHasherInterface $userPasswordHasher,
     ) {
     }
 
@@ -41,7 +45,7 @@ class UserService
             ->setFirstName($firstName)
             ->setLastName($lastName)
             ->setRole($role->value)
-            ->setPassword($password);
+            ->setPassword($this->userPasswordHasher->hashPassword($user, $plainPassword));
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();

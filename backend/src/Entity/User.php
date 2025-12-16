@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Enum\UserRole;
 use App\Repository\UserRepository;
-use App\Service\UserService;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
-class User
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -41,7 +43,7 @@ class User
     private Collection $articles;
 
     #[ORM\Column(length: 255)]
-    #[Assert\Choice(choices: [UserService::ROLE_BLOGGER, UserService::ROLE_ADMIN])]
+    #[Assert\Choice(callback: [UserRole::class, 'values'])]
     private ?string $role = null;
 
     public function __construct()
@@ -138,5 +140,25 @@ class User
         $this->role = $role;
 
         return $this;
+    }
+
+    public function getRoles(): array
+    {
+        $roles = ['ROLE_USER'];
+
+        if ($this->role !== null) {
+            $roles[] = sprintf('ROLE_%s', strtoupper($this->role));
+        }
+
+        return array_unique($roles);
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->username;
+    }
+
+    public function eraseCredentials(): void
+    {
     }
 }
