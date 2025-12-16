@@ -16,6 +16,13 @@ use Symfony\Component\Routing\Attribute\Route;
 final class UserController extends AbstractController
 {
     /**
+     * @param string $userApiKey
+     */
+    public function __construct(
+        private readonly string $userApiKey,
+    ) {
+    }
+    /**
      * @param Request $request
      * @param UserService $userService
      *
@@ -25,6 +32,8 @@ final class UserController extends AbstractController
     #[Route('/user/create', name: 'user_create', methods: ['GET', 'POST'])]
     public function create(Request $request, UserService $userService): Response
     {
+        echo $this->userApiKey;
+
         $userData = new User();
         $form = $this->createForm(UserType::class, $userData);
         $form->handleRequest($request);
