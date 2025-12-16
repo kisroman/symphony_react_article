@@ -9,8 +9,8 @@ use App\Entity\User;
 use App\Exception\ValidationException;
 use App\Repository\ArticleRepository;
 use App\Service\ArticleService;
+use App\Service\RequestPayloadExtractor;
 use Doctrine\ORM\EntityManagerInterface;
-use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,6 +32,7 @@ final class ArticleApiController extends AbstractController
         private readonly ArticleService $articleService,
         private readonly EntityManagerInterface $entityManager,
         private readonly SerializerInterface $serializer,
+        private readonly RequestPayloadExtractor $payloadExtractor,
     ) {
     }
 
@@ -81,7 +82,7 @@ final class ArticleApiController extends AbstractController
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
-        $payload = $this->decodePayload($request);
+        $payload = $this->payloadExtractor->extractJson($request);
 
         foreach (['title', 'description'] as $field) {
             if (!array_key_exists($field, $payload)) {
@@ -130,7 +131,7 @@ final class ArticleApiController extends AbstractController
             return new JsonResponse(['message' => 'Permission denied'], Response::HTTP_FORBIDDEN);
         }
 
-        $payload = $this->decodePayload($request);
+        $payload = $this->payloadExtractor->extractJson($request);
 
         if (isset($payload['title'])) {
             $article->setTitle($payload['title']);
@@ -175,17 +176,4 @@ final class ArticleApiController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
-    /**
-     * @param Request $request
-     *
-     * @return array
-     */
-    private function decodePayload(Request $request): array
-    {
-        try {
-            return json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            throw new ValidationException('Invalid JSON payload');
-        }
-    }
 }

@@ -8,9 +8,9 @@ use App\Entity\User;
 use App\Enum\UserRole;
 use App\Exception\ValidationException;
 use App\Repository\UserRepository;
+use App\Service\RequestPayloadExtractor;
 use App\Service\UserService;
 use Doctrine\ORM\EntityManagerInterface;
-use JsonException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -32,6 +32,7 @@ final class UserApiController extends AbstractController
         private readonly UserService $userService,
         private readonly EntityManagerInterface $entityManager,
         private readonly SerializerInterface $serializer,
+        private readonly RequestPayloadExtractor $payloadExtractor,
     ) {
     }
 
@@ -81,7 +82,7 @@ final class UserApiController extends AbstractController
     #[Route('', name: 'create', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
-        $payload = $this->decodePayload($request);
+        $payload = $this->payloadExtractor->extractJson($request);
 
         foreach (['username', 'firstName', 'lastName', 'role', 'password'] as $field) {
             if (!array_key_exists($field, $payload)) {
@@ -123,7 +124,7 @@ final class UserApiController extends AbstractController
             throw new ValidationException('User not found');
         }
 
-        $payload = $this->decodePayload($request);
+        $payload = $this->payloadExtractor->extractJson($request);
 
         if (isset($payload['username'])) {
             $user->setUsername($payload['username']);
@@ -172,17 +173,4 @@ final class UserApiController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
-    /**
-     * @param Request $request
-     *
-     * @return array
-     */
-    private function decodePayload(Request $request): array
-    {
-        try {
-            return json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
-            throw new ValidationException('Invalid JSON payload');
-        }
-    }
 }
