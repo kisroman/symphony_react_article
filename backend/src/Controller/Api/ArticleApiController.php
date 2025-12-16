@@ -42,13 +42,13 @@ final class ArticleApiController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): JsonResponse
     {
-        $data = $this->serializer->serialize(
+        $data = $this->serializer->normalize(
             $this->articleRepository->findAll(),
-            'json',
+            null,
             ['groups' => ['article:read']]
         );
 
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return new JsonResponse($data, Response::HTTP_OK);
     }
 
     /**
@@ -63,12 +63,12 @@ final class ArticleApiController extends AbstractController
         $article = $this->articleRepository->find($id);
 
         if (!$article instanceof Article) {
-            return new JsonResponse(['message' => 'Artcile not found'], Response::HTTP_NOT_FOUND);
+            throw new ValidationException('Article not found');
         }
 
-        $data = $this->serializer->serialize($article, 'json', ['groups' => ['article:read']]);
+        $data = $this->serializer->normalize($article, null, ['groups' => ['article:read']]);
 
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return new JsonResponse($data, Response::HTTP_OK);
     }
 
     /**
@@ -100,9 +100,9 @@ final class ArticleApiController extends AbstractController
             $currentUser
         );
 
-        $data = $this->serializer->serialize($article, 'json', ['groups' => ['article:read']]);
+        $data = $this->serializer->normalize($article, null, ['groups' => ['article:read']]);
 
-        return new JsonResponse($data, Response::HTTP_CREATED, [], true);
+        return new JsonResponse($data, Response::HTTP_CREATED);
     }
 
     /**
@@ -118,7 +118,7 @@ final class ArticleApiController extends AbstractController
         $article = $this->articleRepository->find($id);
 
         if (!$article instanceof Article) {
-            return new JsonResponse(['message' => 'Article not found'], Response::HTTP_NOT_FOUND);
+            throw new ValidationException('Article not found');
         }
 
         $currentUser = $this->getUser();
@@ -141,9 +141,9 @@ final class ArticleApiController extends AbstractController
 
         $this->entityManager->flush();
 
-        $data = $this->serializer->serialize($article, 'json', ['groups' => ['article:read']]);
+        $data = $this->serializer->normalize($article, null, ['groups' => ['article:read']]);
 
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return new JsonResponse($data, Response::HTTP_OK);
     }
 
     /**
@@ -157,7 +157,7 @@ final class ArticleApiController extends AbstractController
         $article = $this->articleRepository->find($id);
 
         if (!$article instanceof Article) {
-            return new JsonResponse(['message' => 'Article not found'], Response::HTTP_NOT_FOUND);
+            throw new ValidationException('Article not found');
         }
 
         $currentUser = $this->getUser();

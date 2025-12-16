@@ -25,7 +25,7 @@ class UserRepository extends ServiceEntityRepository
      */
     public function findOneByApiToken(?string $apiToken): ?User
     {
-        if ($apiToken === null) {
+        if (!$apiToken) {
             return null;
         }
 

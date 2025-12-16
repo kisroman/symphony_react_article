@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller\Api;
 
 use App\Entity\User;
+use App\Enum\UserRole;
 use App\Exception\ValidationException;
 use App\Repository\UserRepository;
 use App\Service\UserService;
@@ -41,13 +42,13 @@ final class UserApiController extends AbstractController
     #[Route('', name: 'index', methods: ['GET'])]
     public function index(): JsonResponse
     {
-        $data = $this->serializer->serialize(
+        $data = $this->serializer->normalize(
             $this->userRepository->findAll(),
-            'json',
+            null,
             ['groups' => ['user:read']]
         );
 
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return new JsonResponse($data, Response::HTTP_OK);
     }
 
     /**
@@ -62,12 +63,12 @@ final class UserApiController extends AbstractController
         $user = $this->userRepository->find($id);
 
         if (!$user instanceof User) {
-            return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+            throw new ValidationException('User not found');
         }
 
-        $data = $this->serializer->serialize($user, 'json', ['groups' => ['user:read']]);
+        $data = $this->serializer->normalize($user, null, ['groups' => ['user:read']]);
 
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return new JsonResponse($data, Response::HTTP_OK);
     }
 
     /**
@@ -88,17 +89,22 @@ final class UserApiController extends AbstractController
             }
         }
 
+        $role = UserRole::tryFrom($payload['role']);
+        if ($role === null) {
+            throw new ValidationException('Unsupported role value');
+        }
+
         $user = $this->userService->createAndFlush(
             $payload['username'],
             $payload['firstName'],
             $payload['lastName'],
-            $payload['role'],
+            $role,
             $payload['password']
         );
 
-        $data = $this->serializer->serialize($user, 'json', ['groups' => ['user:read']]);
+        $data = $this->serializer->normalize($user, null, ['groups' => ['user:read']]);
 
-        return new JsonResponse($data, Response::HTTP_CREATED, [], true);
+        return new JsonResponse($data, Response::HTTP_CREATED);
     }
 
     /**
@@ -114,7 +120,7 @@ final class UserApiController extends AbstractController
         $user = $this->userRepository->find($id);
 
         if (!$user instanceof User) {
-            return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+            throw new ValidationException('User not found');
         }
 
         $payload = $this->decodePayload($request);
@@ -129,7 +135,11 @@ final class UserApiController extends AbstractController
             $user->setLastName($payload['lastName']);
         }
         if (isset($payload['role'])) {
-            $user->setRole($payload['role']);
+            $role = UserRole::tryFrom($payload['role']);
+            if ($role === null) {
+                throw new ValidationException('Unsupported role value');
+            }
+            $user->setRole($role->value);
         }
         if (isset($payload['password'])) {
             $user->setPassword($payload['password']);
@@ -137,9 +147,9 @@ final class UserApiController extends AbstractController
 
         $this->entityManager->flush();
 
-        $data = $this->serializer->serialize($user, 'json', ['groups' => ['user:read']]);
+        $data = $this->serializer->normalize($user, null, ['groups' => ['user:read']]);
 
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return new JsonResponse($data, Response::HTTP_OK);
     }
 
     /**
@@ -153,7 +163,7 @@ final class UserApiController extends AbstractController
         $user = $this->userRepository->find($id);
 
         if (!$user instanceof User) {
-            return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+            throw new ValidationException('User not found');
         }
 
         $this->entityManager->remove($user);

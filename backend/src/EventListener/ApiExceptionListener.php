@@ -20,6 +20,13 @@ class ApiExceptionListener
      */
     public function onKernelException(ExceptionEvent $event): void
     {
+        $request = $event->getRequest();
+        $routeName = (string) $request->attributes->get('_route');
+
+        if ($routeName === '' || !str_starts_with($routeName, 'api_')) {
+            return;
+        }
+
         $exception = $event->getThrowable();
 
         if ($exception instanceof ValidationException) {
