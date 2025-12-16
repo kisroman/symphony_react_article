@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create user{% endblock %}
+
+{% block body %}
+    <h1>Create user</h1>
+
+    {{ form_start(form) }}
+        {{ form_row(form.username) }}
+        {{ form_row(form.firstName) }}
+        {{ form_row(form.lastName) }}
+        <button type="submit">Create</button>
+    {{ form_end(form) }}
+{% endblock %}
