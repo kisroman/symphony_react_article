@@ -8,6 +8,7 @@ use App\Entity\Article;
 use App\Entity\User;
 use App\Exception\ValidationException;
 use App\Repository\ArticleRepository;
+use App\Security\Voter\ArticleVoter;
 use App\Service\ArticleService;
 use App\Service\RequestPayloadExtractor;
 use Doctrine\ORM\EntityManagerInterface;
@@ -17,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/articles', name: 'api_articles_')]
 final class ArticleApiController extends AbstractController
@@ -26,6 +28,7 @@ final class ArticleApiController extends AbstractController
      * @param ArticleService $articleService
      * @param EntityManagerInterface $entityManager
      * @param SerializerInterface $serializer
+     * @param RequestPayloadExtractor $payloadExtractor
      */
     public function __construct(
         private readonly ArticleRepository $articleRepository,
@@ -53,20 +56,14 @@ final class ArticleApiController extends AbstractController
     }
 
     /**
-     * @param int $id
+     * @param Article $article
      *
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    #[Route('/{id}', name: 'show', methods: ['GET'])]
-    public function show(int $id): JsonResponse
+    #[Route('/{article}', name: 'show', methods: ['GET'])]
+    public function show(Article $article): JsonResponse
     {
-        $article = $this->articleRepository->find($id);
-
-        if (!$article instanceof Article) {
-            throw new ValidationException('Article not found');
-        }
-
         $data = $this->serializer->normalize($article, null, ['groups' => ['article:read']]);
 
         return new JsonResponse($data, Response::HTTP_OK);
@@ -80,15 +77,10 @@ final class ArticleApiController extends AbstractController
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
     #[Route('', name: 'create', methods: ['POST'])]
+    #[IsGranted('ROLE_USER')]
     public function create(Request $request): JsonResponse
     {
         $payload = $this->payloadExtractor->extractJson($request);
-
-        foreach (['title', 'description'] as $field) {
-            if (!array_key_exists($field, $payload)) {
-                throw new ValidationException(sprintf('Field "%s" is required', $field));
-            }
-        }
 
         $currentUser = $this->getUser();
         if (!$currentUser instanceof User) {
@@ -96,8 +88,8 @@ final class ArticleApiController extends AbstractController
         }
 
         $article = $this->articleService->createAndFlush(
-            $payload['title'],
-            $payload['description'],
+            $payload['title'] ?? '',
+            $payload['description'] ?? '',
             $currentUser
         );
 
@@ -107,30 +99,16 @@ final class ArticleApiController extends AbstractController
     }
 
     /**
-     * @param int $id
+     * @param Article $article
      * @param Request $request
      *
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    public function update(int $id, Request $request): JsonResponse
+    #[Route('/{article}', name: 'update', methods: ['PUT'])]
+    #[IsGranted(ArticleVoter::MANAGE, 'article')]
+    public function update(Article $article, Request $request): JsonResponse
     {
-        $article = $this->articleRepository->find($id);
-
-        if (!$article instanceof Article) {
-            throw new ValidationException('Article not found');
-        }
-
-        $currentUser = $this->getUser();
-        if (!$currentUser instanceof User) {
-            return new JsonResponse(['message' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        if ($article->getAuthor()->getId() !== $currentUser->getId()) {
-            return new JsonResponse(['message' => 'Permission denied'], Response::HTTP_FORBIDDEN);
-        }
-
         $payload = $this->payloadExtractor->extractJson($request);
 
         if (isset($payload['title'])) {
@@ -140,7 +118,7 @@ final class ArticleApiController extends AbstractController
             $article->setDescription($payload['description']);
         }
 
-        $this->entityManager->flush();
+        $this->articleService->updateAndFlush($article);
 
         $data = $this->serializer->normalize($article, null, ['groups' => ['article:read']]);
 
@@ -148,32 +126,17 @@ final class ArticleApiController extends AbstractController
     }
 
     /**
-     * @param int $id
+     * @param Article $article
      *
      * @return JsonResponse
      */
-    #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    public function delete(int $id): JsonResponse
+    #[Route('/{article}', name: 'delete', methods: ['DELETE'])]
+    #[IsGranted(ArticleVoter::MANAGE, 'article')]
+    public function delete(Article $article): JsonResponse
     {
-        $article = $this->articleRepository->find($id);
-
-        if (!$article instanceof Article) {
-            throw new ValidationException('Article not found');
-        }
-
-        $currentUser = $this->getUser();
-        if (!$currentUser instanceof User) {
-            return new JsonResponse(['message' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
-        }
-
-        if ($article->getAuthor()->getId() !== $currentUser->getId()) {
-            return new JsonResponse(['message' => 'Permission denied'], Response::HTTP_FORBIDDEN);
-        }
-
         $this->entityManager->remove($article);
         $this->entityManager->flush();
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
-
 }

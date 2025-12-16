@@ -8,6 +8,7 @@ use App\Entity\User;
 use App\Enum\UserRole;
 use App\Exception\ValidationException;
 use App\Repository\UserRepository;
+use App\Security\Voter\UserVoter;
 use App\Service\RequestPayloadExtractor;
 use App\Service\UserService;
 use Doctrine\ORM\EntityManagerInterface;
@@ -16,6 +17,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\SerializerInterface;
 
 #[Route('/api/users', name: 'api_users_')]
@@ -26,6 +28,7 @@ final class UserApiController extends AbstractController
      * @param UserService $userService
      * @param EntityManagerInterface $entityManager
      * @param SerializerInterface $serializer
+     * @param RequestPayloadExtractor $payloadExtractor
      */
     public function __construct(
         private readonly UserRepository $userRepository,
@@ -53,20 +56,14 @@ final class UserApiController extends AbstractController
     }
 
     /**
-     * @param int $id
+     * @param User $user
      *
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    #[Route('/{id}', name: 'show', methods: ['GET'])]
-    public function show(int $id): JsonResponse
+    #[Route('/{user}', name: 'show', methods: ['GET'])]
+    public function show(User $user): JsonResponse
     {
-        $user = $this->userRepository->find($id);
-
-        if (!$user instanceof User) {
-            throw new ValidationException('User not found');
-        }
-
         $data = $this->serializer->normalize($user, null, ['groups' => ['user:read']]);
 
         return new JsonResponse($data, Response::HTTP_OK);
@@ -84,23 +81,17 @@ final class UserApiController extends AbstractController
     {
         $payload = $this->payloadExtractor->extractJson($request);
 
-        foreach (['username', 'firstName', 'lastName', 'role', 'password'] as $field) {
-            if (!array_key_exists($field, $payload)) {
-                throw new ValidationException(sprintf('Field "%s" is required', $field));
-            }
-        }
-
         $role = UserRole::tryFrom($payload['role']);
         if ($role === null) {
             throw new ValidationException('Unsupported role value');
         }
 
         $user = $this->userService->createAndFlush(
-            $payload['username'],
-            $payload['firstName'],
-            $payload['lastName'],
+            $payload['username'] ?? '',
+            $payload['firstName'] ?? '',
+            $payload['lastName'] ?? '',
             $role,
-            $payload['password']
+            $payload['password'] ?? ''
         );
 
         $data = $this->serializer->normalize($user, null, ['groups' => ['user:read']]);
@@ -115,15 +106,10 @@ final class UserApiController extends AbstractController
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    #[Route('/{id}', name: 'update', methods: ['PUT'])]
-    public function update(int $id, Request $request): JsonResponse
+    #[Route('/{user}', name: 'update', methods: ['PUT'])]
+    #[IsGranted(UserVoter::MANAGE, 'user')]
+    public function update(User $user, Request $request): JsonResponse
     {
-        $user = $this->userRepository->find($id);
-
-        if (!$user instanceof User) {
-            throw new ValidationException('User not found');
-        }
-
         $payload = $this->payloadExtractor->extractJson($request);
 
         if (isset($payload['username'])) {
@@ -146,7 +132,7 @@ final class UserApiController extends AbstractController
             $user->setPassword($payload['password']);
         }
 
-        $this->entityManager->flush();
+        $this->userService->updateAndFlush($user);
 
         $data = $this->serializer->normalize($user, null, ['groups' => ['user:read']]);
 
@@ -158,15 +144,10 @@ final class UserApiController extends AbstractController
      *
      * @return JsonResponse
      */
-    #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    public function delete(int $id): JsonResponse
+    #[Route('/{user}', name: 'delete', methods: ['DELETE'])]
+    #[IsGranted(UserVoter::MANAGE, 'user')]
+    public function delete(User $user): JsonResponse
     {
-        $user = $this->userRepository->find($id);
-
-        if (!$user instanceof User) {
-            throw new ValidationException('User not found');
-        }
-
         $this->entityManager->remove($user);
         $this->entityManager->flush();
 
