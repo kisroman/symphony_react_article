@@ -113,6 +113,7 @@ final class ArticleApiController extends AbstractController
             context: [
                 AbstractNormalizer::OBJECT_TO_POPULATE => $article,
                 AbstractNormalizer::IGNORED_ATTRIBUTES => ['author', 'id'],
+                'groups' => ['article:write'],
             ]
         );
 

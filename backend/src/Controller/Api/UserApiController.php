@@ -114,6 +114,7 @@ final class UserApiController extends AbstractController
             context: [
                 AbstractNormalizer::OBJECT_TO_POPULATE => $user,
                 AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
+                'groups' => ['user:write'],
             ]
         );
 
