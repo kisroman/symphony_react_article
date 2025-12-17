@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Enum\UserRole;
+use App\Exception\ValidationException;
 use App\Form\UserType;
 use App\Service\UserService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -36,10 +37,6 @@ final class UserController extends AbstractController
         $form = $this->createForm(UserType::class, $userData);
         $form->handleRequest($request);
 
-        if ($form->isSubmitted() && !$form->isValid()) {
-            $this->addFlash('error', 'Please fix the validation errors.');
-        }
-
         if (!$form->isSubmitted() || !$form->isValid()) {
             return $this->render('user/register.html.twig', [
                 'form' => $form->createView(),
@@ -50,7 +47,7 @@ final class UserController extends AbstractController
             $userData->getUsername(),
             $userData->getFirstName(),
             $userData->getLastName(),
-            UserRole::BLOGGER,
+            UserRole::BLOGGER->value,
             $userData->getPassword() ?? ''
         );
 

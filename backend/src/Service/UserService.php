@@ -5,21 +5,19 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Entity\User;
-use App\Enum\UserRole;
+use App\Exception\ValidationException;
 use Doctrine\ORM\EntityManagerInterface;
-use InvalidArgumentException;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class UserService
 {
 
     /**
-     * @param EntityManagerInterface $entityManager
-     * @param UserPasswordHasherInterface $userPasswordHasher
-     */
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly UserPasswordHasherInterface $userPasswordHasher,
+        private readonly ValidatorInterface $validator,
     ) {
     }
 
@@ -36,7 +34,7 @@ class UserService
         string $username,
         string $firstName,
         string $lastName,
-        UserRole $role,
+        string $role,
         string $password
     ): User {
 
@@ -44,10 +42,33 @@ class UserService
         $user->setUsername($username)
             ->setFirstName($firstName)
             ->setLastName($lastName)
-            ->setRole($role->value)
-            ->setPassword($this->userPasswordHasher->hashPassword($user, $plainPassword));
+            ->setRole($role)
+            ->setApiToken(bin2hex(random_bytes(32)));
 
-        $this->entityManager->persist($user);
+        $hashedPassword = $this->userPasswordHasher->hashPassword($user, $password);
+        $user->setPassword($hashedPassword);
+
+        return $this->validateAndFlush($user, true);
+    }
+
+
+    /**
+     * @param User $user
+     * @param bool $persist
+     *
+     * @return User
+     */
+    public function validateAndFlush(User $user, bool $persist = false): User
+    {
+        $errors = $this->validator->validate($user);
+        if (count($errors) > 0) {
+            throw new ValidationException((string) $errors);
+        }
+
+        if ($persist) {
+            $this->entityManager->persist($user);
+        }
+
         $this->entityManager->flush();
 
         return $user;

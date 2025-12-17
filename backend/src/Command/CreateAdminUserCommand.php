@@ -58,7 +58,7 @@ class CreateAdminUserCommand extends Command
             $username,
             $firstName,
             $lastName,
-            UserRole::ADMIN,
+            UserRole::ADMIN->value,
             $password
         );
 

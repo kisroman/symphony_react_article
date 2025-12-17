@@ -4,32 +4,20 @@ declare(strict_types=1);
 
 namespace App\Security\Voter;
 
+use App\Entity\Article;
 use App\Entity\User;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
-class ArticleCreateVoter extends Voter
+class ArticleVoter extends Voter
 {
-    public const CREATE = 'ARTICLE_CREATE';
+    public const MANAGE = 'ARTICLE_MANAGE';
 
-    /**
-     * @param string $attribute
-     * @param mixed $subject
-     *
-     * @return bool
-     */
     protected function supports(string $attribute, mixed $subject): bool
     {
-        return $attribute === self::CREATE;
+        return $attribute === self::MANAGE && $subject instanceof Article;
     }
 
-    /**
-     * @param string $attribute
-     * @param mixed $subject
-     * @param TokenInterface $token
-     *
-     * @return bool
-     */
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token): bool
     {
         $user = $token->getUser();
@@ -38,6 +26,8 @@ class ArticleCreateVoter extends Voter
             return false;
         }
 
-        return true;
+        assert($subject instanceof Article);
+
+        return $subject->getAuthor()?->getId() === $user->getId();
     }
 }
