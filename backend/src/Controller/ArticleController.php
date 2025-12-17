@@ -7,12 +7,12 @@ namespace App\Controller;
 use App\Entity\Article;
 use App\Exception\ValidationException;
 use App\Form\ArticleType;
-use App\Security\Voter\ArticleCreateVoter;
 use App\Service\ArticleService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class ArticleController extends AbstractController
 {
@@ -23,17 +23,13 @@ final class ArticleController extends AbstractController
      * @return Response
      */
     #[Route('/article/create', name: 'article_create', methods: ['GET', 'POST'])]
+    #[IsGranted('ROLE_USER')]
     public function create(Request $request, ArticleService $articleService): Response
     {
-        $this->denyAccessUnlessGranted(ArticleCreateVoter::CREATE);
 
         $articleData = new Article();
         $form = $this->createForm(ArticleType::class, $articleData);
         $form->handleRequest($request);
-
-        if ($form->isSubmitted() && !$form->isValid()) {
-            throw new ValidationException('Validation failed');
-        }
 
         if (!$form->isSubmitted() || !$form->isValid()) {
             return $this->render('article/create.html.twig', [

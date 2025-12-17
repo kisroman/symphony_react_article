@@ -18,6 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 #[Route('/api/users', name: 'api_users_')]
@@ -43,13 +44,13 @@ final class UserApiController extends AbstractController
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    #[Route('', name: 'index', methods: ['GET'])]
+    #[Route(name: 'index', methods: ['GET'])]
     public function index(): JsonResponse
     {
         $data = $this->serializer->normalize(
             $this->userRepository->findAll(),
             null,
-            ['groups' => ['user:read']]
+            ['groups' => ['user:list']]
         );
 
         return new JsonResponse($data, Response::HTTP_OK);
@@ -64,7 +65,7 @@ final class UserApiController extends AbstractController
     #[Route('/{user}', name: 'show', methods: ['GET'])]
     public function show(User $user): JsonResponse
     {
-        $data = $this->serializer->normalize($user, null, ['groups' => ['user:read']]);
+        $data = $this->serializer->normalize($user, null, ['groups' => ['user:detail']]);
 
         return new JsonResponse($data, Response::HTTP_OK);
     }
@@ -81,20 +82,15 @@ final class UserApiController extends AbstractController
     {
         $payload = $this->payloadExtractor->extractJson($request);
 
-        $role = UserRole::tryFrom($payload['role']);
-        if ($role === null) {
-            throw new ValidationException('Unsupported role value');
-        }
-
         $user = $this->userService->createAndFlush(
             $payload['username'] ?? '',
             $payload['firstName'] ?? '',
             $payload['lastName'] ?? '',
-            $role,
+            $payload['role'] ?? '',
             $payload['password'] ?? ''
         );
 
-        $data = $this->serializer->normalize($user, null, ['groups' => ['user:read']]);
+        $data = $this->serializer->normalize($user, null, ['groups' => ['user:detail']]);
 
         return new JsonResponse($data, Response::HTTP_CREATED);
     }
@@ -112,29 +108,18 @@ final class UserApiController extends AbstractController
     {
         $payload = $this->payloadExtractor->extractJson($request);
 
-        if (isset($payload['username'])) {
-            $user->setUsername($payload['username']);
-        }
-        if (isset($payload['firstName'])) {
-            $user->setFirstName($payload['firstName']);
-        }
-        if (isset($payload['lastName'])) {
-            $user->setLastName($payload['lastName']);
-        }
-        if (isset($payload['role'])) {
-            $role = UserRole::tryFrom($payload['role']);
-            if ($role === null) {
-                throw new ValidationException('Unsupported role value');
-            }
-            $user->setRole($role->value);
-        }
-        if (isset($payload['password'])) {
-            $user->setPassword($payload['password']);
-        }
+        $this->serializer->denormalize(
+            $payload,
+            User::class,
+            context: [
+                AbstractNormalizer::OBJECT_TO_POPULATE => $user,
+                AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
+            ]
+        );
 
-        $this->userService->updateAndFlush($user);
+        $this->userService->validateAndFlush($user);
 
-        $data = $this->serializer->normalize($user, null, ['groups' => ['user:read']]);
+        $data = $this->serializer->normalize($user, null, ['groups' => ['user:detail']]);
 
         return new JsonResponse($data, Response::HTTP_OK);
     }

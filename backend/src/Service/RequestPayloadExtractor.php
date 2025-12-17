@@ -5,21 +5,20 @@ declare(strict_types=1);
 namespace App\Service;
 
 use App\Exception\ValidationException;
-use JsonException;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\Serializer\Encoder\DecoderInterface;
 
 class RequestPayloadExtractor
 {
-    /**
-     * @param Request $request
-     *
-     * @return array
-     */
+    public function __construct(private readonly DecoderInterface $decoder)
+    {
+    }
+
     public function extractJson(Request $request): array
     {
         try {
-            return json_decode($request->getContent(), true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException) {
+            return $this->decoder->decode($request->getContent(), 'json');
+        } catch (\Throwable) {
             throw new ValidationException('Invalid JSON payload');
         }
     }

@@ -30,7 +30,7 @@ class UserRepository extends ServiceEntityRepository
         }
 
         return $this->createQueryBuilder('u')
-            ->andWhere('u.api_token = :val')
+            ->andWhere('u.apiToken = :val')
             ->setParameter('val', $apiToken)
             ->getQuery()
             ->getOneOrNullResult();

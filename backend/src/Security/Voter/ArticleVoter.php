@@ -26,9 +26,8 @@ class ArticleVoter extends Voter
             return false;
         }
 
-        /** @var Article $article */
-        $article = $subject;
+        assert($subject instanceof Article);
 
-        return $article->getAuthor()?->getId() === $user->getId();
+        return $subject->getAuthor()?->getId() === $user->getId();
     }
 }

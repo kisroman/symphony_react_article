@@ -25,6 +25,8 @@ class UserVoter extends Voter
             return false;
         }
 
+        assert($subject instanceof User);
+
         if ($subject->getId() === $currentUser->getId()) {
             return true;
         }

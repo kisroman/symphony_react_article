@@ -23,7 +23,7 @@ class ApiExceptionListener
         $request = $event->getRequest();
         $routeName = (string) $request->attributes->get('_route');
 
-        if ($routeName === '' || !str_starts_with($routeName, 'api_')) {
+        if (!$routeName || !str_starts_with($routeName, 'api_')) {
             return;
         }
 

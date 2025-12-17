@@ -12,23 +12,23 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
 {
-    #[Groups(['article:read'])]
+    #[Groups(['article:list', 'article:detail'])]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(['article:read', 'article:write'])]
+    #[Groups(['article:list', 'article:detail', 'article:write'])]
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     private ?string $title = null;
 
-    #[Groups(['article:read', 'article:write'])]
+    #[Groups(['article:detail', 'article:write'])]
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     private ?string $description = null;
 
-    #[Groups(['article:read', 'article:write'])]
+    #[Groups(['article:detail', 'article:write'])]
     #[ORM\ManyToOne(inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull]

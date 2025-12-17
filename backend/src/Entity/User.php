@@ -13,29 +13,30 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
-    #[Groups(['user:read', 'article:read'])]
+    #[Groups(['user:list', 'user:detail', 'article:read'])]
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(['user:read', 'user:write', 'article:read'])]
+    #[Groups(['user:list', 'user:detail', 'user:write', 'article:read'])]
     #[ORM\Column(length: 50)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
     private ?string $username = null;
 
-    #[Groups(['user:read', 'user:write', 'article:read'])]
+    #[Groups(['user:detail', 'user:write', 'article:read'])]
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     private ?string $firstName = null;
 
-    #[Groups(['user:read', 'user:write', 'article:read'])]
+    #[Groups(['user:detail', 'user:write', 'article:read'])]
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank]
     private ?string $lastName = null;
@@ -48,17 +49,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var Collection<int, Article>
      */
-    #[Groups(['user:read'])]
+    #[Groups(['user:detail'])]
     #[ORM\OneToMany(targetEntity: Article::class, mappedBy: 'author', orphanRemoval: true)]
     private Collection $articles;
 
-    #[Groups(['user:read', 'user:write'])]
+    #[Groups(['user:detail', 'user:write'])]
     #[ORM\Column(length: 255)]
-    #[Assert\Choice(callback: [UserRole::class, 'values'])]
     private ?string $role = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $api_token = null;
+    #[ORM\Column(name: 'api_token', length: 255)]
+    private ?string $apiToken = null;
 
     public function __construct()
     {
@@ -166,6 +166,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return array_unique($roles);
     }
+    #[Assert\Callback]
+    public function validateRole(ExecutionContextInterface $context): void
+    {
+        if ($this->role !== null && UserRole::tryFrom($this->role) === null) {
+            $context->buildViolation('Unsupported role value')->atPath('role')->addViolation();
+        }
+    }
 
     public function getUserIdentifier(): string
     {
@@ -178,12 +185,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getApiToken(): ?string
     {
-        return $this->api_token;
+        return $this->apiToken;
     }
 
-    public function setApiToken(string $api_token): static
+    public function setApiToken(string $apiToken): static
     {
-        $this->api_token = $api_token;
+        $this->apiToken = $apiToken;
 
         return $this;
     }

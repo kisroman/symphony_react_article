@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -43,13 +44,13 @@ final class ArticleApiController extends AbstractController
      * @return JsonResponse
      * @throws \Symfony\Component\Serializer\Exception\ExceptionInterface
      */
-    #[Route('', name: 'index', methods: ['GET'])]
+    #[Route(name: 'index', methods: ['GET'])]
     public function index(): JsonResponse
     {
         $data = $this->serializer->normalize(
             $this->articleRepository->findAll(),
             null,
-            ['groups' => ['article:read']]
+            ['groups' => ['article:list']]
         );
 
         return new JsonResponse($data, Response::HTTP_OK);
@@ -64,7 +65,7 @@ final class ArticleApiController extends AbstractController
     #[Route('/{article}', name: 'show', methods: ['GET'])]
     public function show(Article $article): JsonResponse
     {
-        $data = $this->serializer->normalize($article, null, ['groups' => ['article:read']]);
+        $data = $this->serializer->normalize($article, null, ['groups' => ['article:detail']]);
 
         return new JsonResponse($data, Response::HTTP_OK);
     }
@@ -82,15 +83,10 @@ final class ArticleApiController extends AbstractController
     {
         $payload = $this->payloadExtractor->extractJson($request);
 
-        $currentUser = $this->getUser();
-        if (!$currentUser instanceof User) {
-            return new JsonResponse(['message' => 'Authentication required'], Response::HTTP_UNAUTHORIZED);
-        }
-
         $article = $this->articleService->createAndFlush(
             $payload['title'] ?? '',
             $payload['description'] ?? '',
-            $currentUser
+                $this->getUser()
         );
 
         $data = $this->serializer->normalize($article, null, ['groups' => ['article:read']]);
@@ -111,14 +107,16 @@ final class ArticleApiController extends AbstractController
     {
         $payload = $this->payloadExtractor->extractJson($request);
 
-        if (isset($payload['title'])) {
-            $article->setTitle($payload['title']);
-        }
-        if (isset($payload['description'])) {
-            $article->setDescription($payload['description']);
-        }
+        $this->serializer->denormalize(
+            $payload,
+            Article::class,
+            context: [
+                AbstractNormalizer::OBJECT_TO_POPULATE => $article,
+                AbstractNormalizer::IGNORED_ATTRIBUTES => ['author', 'id'],
+            ]
+        );
 
-        $this->articleService->updateAndFlush($article);
+        $this->articleService->validateAndFlush($article);
 
         $data = $this->serializer->normalize($article, null, ['groups' => ['article:read']]);
 
