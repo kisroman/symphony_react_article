@@ -28,7 +28,7 @@ class Article
     #[Assert\NotBlank]
     private ?string $description = null;
 
-    #[Groups(['article:detail', 'article:write'])]
+    #[Groups(['article:detail'])]
     #[ORM\ManyToOne(inversedBy: 'articles')]
     #[ORM\JoinColumn(nullable: false)]
     #[Assert\NotNull]
