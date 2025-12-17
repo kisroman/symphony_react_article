@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Article;
 use App\Form\ArticleType;
+use App\Security\Voter\ArticleCreateVoter;
 use App\Service\ArticleService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -23,6 +24,8 @@ final class ArticleController extends AbstractController
     #[Route('/article/create', name: 'article_create', methods: ['GET', 'POST'])]
     public function create(Request $request, ArticleService $articleService): Response
     {
+        $this->denyAccessUnlessGranted(ArticleCreateVoter::CREATE);
+
         $articleData = new Article();
         $form = $this->createForm(ArticleType::class, $articleData);
         $form->handleRequest($request);

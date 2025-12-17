@@ -29,7 +29,7 @@ final class UserController extends AbstractController
      * @return Response
      * @throws \Random\RandomException
      */
-    #[Route('/user/create', name: 'user_create', methods: ['GET', 'POST'])]
+    #[Route('/user/register', name: 'user_register', methods: ['GET', 'POST'])]
     public function create(Request $request, UserService $userService): Response
     {
         $userData = new User();
@@ -41,7 +41,7 @@ final class UserController extends AbstractController
         }
 
         if (!$form->isSubmitted() || !$form->isValid()) {
-            return $this->render('user/create.html.twig', [
+            return $this->render('user/register.html.twig', [
                 'form' => $form->createView(),
             ]);
         }
@@ -64,7 +64,8 @@ final class UserController extends AbstractController
      *
      * @return Response
      */
-    #[Route('/user/create/congratulation/{id}', name: 'user_create_congratulation', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[Route('/user/register/congratulation/{id}', name: 'user_register_congratulation', requirements: ['id' => '\d+'],
+        methods: ['GET'])]
     public function congratulation(int $id): Response
     {
         return $this->render('user/congratulation.html.twig', [
